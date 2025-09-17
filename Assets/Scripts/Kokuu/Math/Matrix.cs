@@ -13,15 +13,16 @@ namespace Kokuu
         [SerializeField] private int _row, _col;
         [SerializeField] private float[] _val;
         
-        public Matrix(int row, int col, IEnumerable<float> values = null)
+        public Matrix(int row, int column, IEnumerable<float> values = null)
         {
             if (row <= 0) throw new ArgumentOutOfRangeException(nameof(row));
-            if (col <= 0) throw new ArgumentOutOfRangeException(nameof(col));
+            if (column <= 0) throw new ArgumentOutOfRangeException(nameof(column));
             
             _row = row;
-            _col = col;
+            _col = column;
             _val = new float[_row * _col];
-            
+
+            for (int i = 0; i < _val.Length; i++) _val[i] = 0;
             if (values is not null) Set(values);
         }
         public Matrix(Matrix mat)
@@ -31,6 +32,13 @@ namespace Kokuu
             _val = new float[_row * _col];
             for (int i = 0, s = _row * _col; i < s; i++)
                 _val[i] = mat._val[i];
+        }
+        public static Matrix Identity(int row)
+        {
+            Matrix mat = new(row, row);
+            for (int i = 0; i < row; i++)
+                mat[i, i] = 1;
+            return mat;
         }
 
         public int row
@@ -61,11 +69,39 @@ namespace Kokuu
                 _col = value;
             }
         }
-        
+
         public float this[int r, int c]
         {
             get => _val[r * _col + c];
             set => _val[r * _col + c] = value;
+        }
+        public float this[Index r, Index c]
+        {
+            get => _val[r.GetOffset(_row) * _col + c.GetOffset(_col)];
+            set => _val[r.GetOffset(_row) * _col + c.GetOffset(_col)] = value;
+        }
+        public Matrix this[Range r, Range c]
+        {
+            get
+            {
+                (int offsetR, int lengthR) = r.GetOffsetAndLength(_row);
+                (int offsetC, int lengthC) = c.GetOffsetAndLength(_col);
+                Matrix mat = new Matrix(lengthR, lengthC);
+                for (int i = 0; i < lengthR; i++)
+                for (int j = 0; j < lengthC; j++)
+                    mat[i, j] = this[offsetR + i, offsetC + j];
+                return mat;
+            }
+            set
+            {
+                (int offsetR, int lengthR) = r.GetOffsetAndLength(_row);
+                (int offsetC, int lengthC) = c.GetOffsetAndLength(_col);
+                if (value._row != lengthR || value._col != lengthC)
+                    throw new MatrixSizeMismatchException($"Size: {lengthR} * {lengthC}");
+                for (int i = 0; i < lengthR; i++)
+                for (int j = 0; j < lengthC; j++)
+                    this[offsetR + i, offsetC + j] = value[i, j];
+            }
         }
 
         public void Set(IEnumerable<float> values)
@@ -170,41 +206,108 @@ namespace Kokuu
             return result;
         }
 
+        public Matrix transposed
+        {
+            get
+            {
+                Matrix mat = new(column, row);
+                for (int r = 0; r < row; r++)
+                for (int c = 0; c < column; c++)
+                    mat[c, r] = this[r, c];
+                return mat;
+            }
+        }
+        
         public float determinant
         {
             get
             {
                 if (row != column)
                     throw new MatrixSizeMismatchException($"Row Counts({row}) Equals to Column Counts({column})");
+
+                return new Matrix(this).Identify();
+            }
+        }
+
+        public Matrix inversed
+        {
+            get
+            {
+                if (row != column)
+                    throw new MatrixSizeMismatchException($"Row Counts({row}) Equals to Column Counts({column})");
                 
-                float det = 1;
+                Matrix mat = new(row, row * 2)
+                {
+                    [.., ..row] = this,
+                    [.., row..] = Identity(row)
+                };
+                mat.Identify();
+                return mat[.., row..];
+            }
+        }
+
+        public float trace
+        {
+            get
+            {
+                int tra = 0;
+                Matrix mat = row >= column ? new Matrix(this) : transposed;
+                
                 for (int i = 0; i < row; i++)
                 {
-                    if (Math.Abs(this[i, i]) < float.Epsilon)
+                    if (Math.Abs(mat[i, i]) < float.Epsilon)
                     {
                         for (int j = i + 1; j <= row; j++)
                         {
-                            if (j == row) return 0;
-                            if (Math.Abs(this[j, i]) < float.Epsilon) continue;
-                            SwapRows(i, j);
-                            det = -det;
+                            if (j == row) goto SkipRow;
+                            if (!(Math.Abs(mat[j, i]) >= float.Epsilon)) continue;
+                            mat.SwapRows(i, j);
                             break;
                         }
                     }
+                    
+                    float s = mat[i, i];
+                    for (int j = i + 1; j < row; j++)
+                        mat.AddRow(j, -mat[j, i] / s, i);
+                    tra++;
+                    
+                    SkipRow: ;
+                }
 
-                    float s = this[i, i];
-                    ScaleRow(i, 1 / s);
-                    det *= s;
+                return tra;
+            }
+        }
 
-                    for (int j = 0; j < row; j++)
+        private float Identify()
+        {
+            float det = 1;
+            
+            for (int i = 0; i < row; i++)
+            {
+                if (Math.Abs(this[i, i]) < float.Epsilon)
+                {
+                    for (int j = i + 1; j <= row; j++)
                     {
-                        if (j == i) continue;
-                        AddRow(j, -this[j, i], i);
+                        if (j == row) return 0;
+                        if (Math.Abs(this[j, i]) < float.Epsilon) continue;
+                        SwapRows(i, j);
+                        det = -det;
+                        break;
                     }
                 }
-                
-                return det;
+
+                float s = this[i, i];
+                ScaleRow(i, 1 / s);
+                det *= s;
+
+                for (int j = 0; j < row; j++)
+                {
+                    if (j == i) continue;
+                    AddRow(j, -this[j, i], i);
+                }
             }
+                
+            return det;
         }
 
         private void SwapRows(int i, int j)
