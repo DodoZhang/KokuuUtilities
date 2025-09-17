@@ -206,6 +206,31 @@ namespace Kokuu
             return result;
         }
 
+        public static Matrix Pow(Matrix m, int p)
+        {
+            if (m is null) throw new ArgumentNullException(nameof(m));
+            if (m.row != m.column)
+                throw new MatrixSizeMismatchException($"Row Counts({m.row}) Equals to Column Counts({m.column})");
+
+            if (p < 0)
+            {
+                m = m.inversed;
+                p = -p;
+                if (m is null) return null;
+            }
+
+            Matrix result = Identity(m.row);
+            Matrix temp = new Matrix(m);
+            
+            for (; p > 0; p /= 2)
+            {
+                if (p % 2 == 1) result *= temp;
+                temp *= temp;
+            }
+
+            return result;
+        }
+
         public Matrix transposed
         {
             get
