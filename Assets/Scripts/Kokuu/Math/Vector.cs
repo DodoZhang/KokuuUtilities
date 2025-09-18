@@ -4,10 +4,14 @@ using System.Globalization;
 using System.Text;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace Kokuu
 {
     [Serializable]
-    public class Vector : IEquatable<Vector>, IFormattable
+    public class Vector : IEquatable<Vector>, IFormattable, ISerializationCallbackReceiver
     {
         [SerializeField] private int _dim;
         [SerializeField] private float[] _val;
@@ -195,6 +199,17 @@ namespace Kokuu
                 return norm;
             }
         }
+        
+        public Matrix transposed
+        {
+            get
+            {
+                Matrix mat = new(1, _dim);
+                for (int c = 0; c < _dim; c++)
+                    mat[0, c] = this[c];
+                return mat;
+            }
+        }
 
         public static float Dot(Vector a, Vector b)
         {
@@ -221,7 +236,47 @@ namespace Kokuu
             };
         }
 
+        public static Vector operator *(Matrix m, Vector v)
+        {
+            if (m is null) throw new ArgumentNullException(nameof(m));
+            if (v is null) throw new ArgumentNullException(nameof(v));
+            if (m.column != v.dimension) throw new SizeMismatchException($"Dimension: {m.column}");
+
+            Vector result = new(m.row);
+            for (int i = 0; i < m.row; i++)
+            {
+                float s = 0;
+                for (int k = 0; k < v.dimension; k++)
+                    s += m[i, k] * v[k];
+                result[i] = s;
+            }
+            return result;
+        }
+        
         public static implicit operator Matrix(Vector v) => new(v._dim, 1, v._val);
+        
+        public void OnBeforeSerialize() { }
+        public void OnAfterDeserialize()
+        {
+            if (_val is null || _val.Length == 0) _val = new float[Math.Max(_dim, 1)];
+            _dim = _val.Length;
+        }
+
+#if UNITY_EDITOR
+        [CustomPropertyDrawer(typeof(Vector))]
+        private class VectorPropertyDrawer : PropertyDrawer
+        {
+            public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+            {
+                return EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(_val)), label);
+            }
+
+            public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+            {
+                EditorGUI.PropertyField(position, property.FindPropertyRelative(nameof(_val)), label);
+            }
+        }
+#endif
     }
 
     public static class VectorMatrixExtensions
