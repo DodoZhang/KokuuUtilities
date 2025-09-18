@@ -19,11 +19,23 @@ namespace Kokuu.Maths
             this.real = real;
             this.imag = imag;
         }
-
         public Complex(Complex c) : this(c.real, c.imag) { }
-
         public static Complex MagArg(float mag, float arg) =>
             new(mag * (float)Math.Cos(arg), mag * (float)Math.Sin(arg));
+        public static Complex Parse(string text) => new ComplexPhaser().Phase(text);
+        public static bool TryParse(string text, out Complex result)
+        {
+            try
+            {
+                result = Parse(text);
+                return true;
+            }
+            catch
+            {
+                result = zero;
+                return false;
+            }
+        }
 
         public static Complex zero => new(0, 0);
         public static Complex j => new(0, 1);
@@ -91,28 +103,32 @@ namespace Kokuu.Maths
         public string ToString(string format) => ToString(format, null);
         public string ToString(string format, IFormatProvider formatProvider)
         {
-            if (string.IsNullOrEmpty(format)) format = "F2";
+            if (string.IsNullOrEmpty(format)) format = "G";
             formatProvider ??= CultureInfo.InvariantCulture.NumberFormat;
 
-            if (Math.Abs(real) < float.Epsilon)
+            bool formatIsG = format == "G";
+            bool realIsZero = real is > -float.Epsilon and < float.Epsilon;
+            bool imagIsZero = imag is > -float.Epsilon and < float.Epsilon;
+            bool imagIsMinusOne = imag + 1 is > -float.Epsilon and < float.Epsilon;
+            bool imagIsOne = imag - 1 is > -float.Epsilon and < float.Epsilon;
+
+            if (realIsZero)
             {
-                return imag switch
-                {
-                    <= -float.Epsilon => $"-j{(-imag).ToString(format, formatProvider)}",
-                    >= float.Epsilon => $"j{imag.ToString(format, formatProvider)}",
-                    _ => "0"
-                };
+                if (imagIsZero) return "0";
+                if (formatIsG && imagIsMinusOne) return "-j";
+                if (formatIsG && imagIsOne) return "j";
+                if (imag < 0) return $"-j{(-imag).ToString(format, formatProvider)}";
+                return $"j{imag.ToString(format, formatProvider)}";
             }
             else
             {
-                return imag switch
-                {
-                    <= -float.Epsilon => $"{real.ToString(format, formatProvider)} -" +
-                                         $" j{(-imag).ToString(format, formatProvider)}",
-                    >= float.Epsilon => $"{real.ToString(format, formatProvider)} +" +
-                                        $" j{imag.ToString(format, formatProvider)}",
-                    _ => $"{real.ToString(format, formatProvider)}"
-                };
+                if (imagIsZero) return real.ToString(format, formatProvider);
+                if (formatIsG && imagIsMinusOne) return $"{real.ToString(format, formatProvider)} - j";
+                if (formatIsG && imagIsOne) return $"{real.ToString(format, formatProvider)} + j";
+                if (imag < 0) return $"{real.ToString(format, formatProvider)} -" +
+                                     $" j{(-imag).ToString(format, formatProvider)}";
+                return $"{real.ToString(format, formatProvider)} +" +
+                       $" j{imag.ToString(format, formatProvider)}";
             }
         }
 
@@ -139,12 +155,167 @@ namespace Kokuu.Maths
         public static implicit operator Complex(float x) => new(x, 0);
         public static explicit operator float(Complex x) => x.real;
 
+        private class ComplexPhaser
+        {
+            private string str;
+            private int index;
+
+            public Complex Phase(string text)
+            {
+                str = text;
+                
+                PhaseWhiteSpace();
+                if (index >= str.Length) return zero;
+                
+                Complex c = PhaseNumber(true);
+                while (index < str.Length) c += PhaseNumber();
+
+                return c;
+            }
+
+            private Complex PhaseNumber(bool isFirst = false)
+            {
+                bool isNegative = false;
+                float number;
+                
+                switch (Top())
+                {
+                    case '+':
+                        index++;
+                        break;
+                    case '-':
+                        index++;
+                        isNegative = true;
+                        break;
+                    default:
+                        if (!isFirst) throw new FormatException();
+                        break;
+                }
+                PhaseWhiteSpace();
+                
+                if (Top() is 'i' or 'j')
+                {
+                    index++;
+                    PhaseWhiteSpace();
+
+                    if (index >= str.Length || Top() is < '0' or > '9')
+                        return isNegative ? -j : j;
+                    
+                    number = PhasePositiveNumber();
+                    PhaseWhiteSpace();
+                    return new Complex(0, isNegative ? -number : number);
+                }
+
+                number = PhasePositiveNumber();
+                PhaseWhiteSpace();
+                
+                if (index >= str.Length || Top() is not ('i' or 'j'))
+                    return new Complex(isNegative ? -number : number, 0);
+
+                index++;
+                PhaseWhiteSpace();
+                return new Complex(0, isNegative ? -number : number);
+            }
+
+            private float PhasePositiveNumber()
+            {
+                float fraction = 0;
+                int exponent = 0;
+                int temp;
+
+                char ch = Next();
+
+                if (ch is '0') { }
+                else if (ch is >= '1' and <= '9')
+                {
+                    fraction = ch - '0';
+
+                    while (TryPhaseDigit(out temp))
+                        fraction = fraction * 10 + temp;
+                }
+                else throw new FormatException();
+
+                if (index < str.Length && str[index] is '.')
+                {
+                    index++;
+                    
+                    fraction = fraction * 10 + PhaseDigit();
+                    exponent--;
+
+                    while (TryPhaseDigit(out temp))
+                    {
+                        fraction = fraction * 10 + temp;
+                        exponent--;
+                    }
+                }
+
+                if (index < str.Length && str[index] is 'e' or 'E')
+                {
+                    index++;
+
+                    bool isExpNegative = false;
+                    ch = Next();
+                    if (ch is '-') isExpNegative = true;
+                    else if (ch is '+') { }
+                    else if (ch is >= '0' and <= '9') index--;
+                    else throw new FormatException();
+                    
+                    int exp = PhaseDigit();
+                    while (TryPhaseDigit(out int digit)) exp = exp * 10 + digit;
+                    
+                    if (isExpNegative) exp = -exp;
+                    exponent += exp;
+                }
+                
+                if (exponent >= 0)
+                    for (int i = 0; i < exponent; i++)
+                        fraction *= 10;
+                else
+                    for (int i = 0; i > exponent; i--)
+                        fraction /= 10;
+                return fraction;
+
+                int PhaseDigit()
+                {
+                    char c = Next();
+                    if (c is >= '0' and <= '9') return c - '0';
+                    throw new FormatException();
+                }
+                
+                bool TryPhaseDigit(out int d)
+                {
+                    d = 0;
+                    if (index >= str.Length) return false;
+                    char c = str[index];
+                    if (c is not (>= '0' and <= '9')) return false;
+                    index++;
+                    d = c - '0';
+                    return true;
+                }
+            }
+        
+            private void PhaseWhiteSpace()
+            {
+                while (index < str.Length && str[index] is ' ' or '\t' or '\r' or '\n') index++;
+            }
+        
+            private char Top()
+            {
+                if (index >= str.Length) throw new FormatException();
+                return str[index];
+            }
+            
+            private char Next()
+            {
+                if (index >= str.Length) throw new FormatException();
+                return str[index++];
+            }
+        }
+
 #if UNITY_EDITOR
         [CustomPropertyDrawer(typeof(Complex))]
         private class ComplexPropertyDrawer : PropertyDrawer
         {
-            private static readonly GUIContent[] sublabels = { new("Re"), new("Im") };
-
             public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
             {
                 return EditorGUIUtility.singleLineHeight;
@@ -153,9 +324,22 @@ namespace Kokuu.Maths
             public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
             {
                 label = EditorGUI.BeginProperty(position, label, property);
-                SerializedProperty iter = property.Copy();
-                iter.Next(true);
-                EditorGUI.MultiPropertyField(position, sublabels, iter, label);
+                
+                SerializedProperty realProperty = property.FindPropertyRelative(nameof(real));
+                SerializedProperty imagProperty = property.FindPropertyRelative(nameof(imag));
+                string str = new Complex(realProperty.floatValue, imagProperty.floatValue).ToString();
+                
+                EditorGUI.BeginChangeCheck();
+                str = EditorGUI.DelayedTextField(position, label, str);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    if (TryParse(str, out Complex c))
+                    {
+                        realProperty.floatValue = c.real;
+                        imagProperty.floatValue = c.imag;
+                    }
+                }
+                
                 EditorGUI.EndProperty();
             }
         }
