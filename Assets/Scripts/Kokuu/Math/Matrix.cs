@@ -100,7 +100,7 @@ namespace Kokuu
                 (int offsetR, int lengthR) = r.GetOffsetAndLength(_row);
                 (int offsetC, int lengthC) = c.GetOffsetAndLength(_col);
                 if (value._row != lengthR || value._col != lengthC)
-                    throw new MatrixSizeMismatchException($"Size: {lengthR} * {lengthC}");
+                    throw new SizeMismatchException($"Size: {lengthR} * {lengthC}");
                 for (int i = 0; i < lengthR; i++)
                 for (int j = 0; j < lengthC; j++)
                     this[offsetR + i, offsetC + j] = value[i, j];
@@ -144,8 +144,7 @@ namespace Kokuu
             if (ReferenceEquals(this, other)) return true;
             if (_row != other._row || _col != other._col) return false;
             for (int i = 0, s = _row * _col; i < s; i++)
-                if (Math.Abs(_val[i] - other._val[i]) >= float.Epsilon)
-                    return false;
+                if (!_val[i].Equals(other._val[i])) return false;
             return true;
         }
         
@@ -154,7 +153,7 @@ namespace Kokuu
             if (a is null) throw new ArgumentNullException(nameof(a));
             if (b is null) throw new ArgumentNullException(nameof(b));
             if (a._row != b._row || a._col != b._col)
-                throw new MatrixSizeMismatchException($"Size: {a._row} * {a._col}");
+                throw new SizeMismatchException($"Size: {a._row} * {a._col}");
 
             Matrix result = new Matrix(a._row, a._col);
             for (int i = 0, s = a._row * a._col; i < s; i++)
@@ -166,7 +165,7 @@ namespace Kokuu
             if (a is null) throw new ArgumentNullException(nameof(a));
             if (b is null) throw new ArgumentNullException(nameof(b));
             if (a._row != b._row || a._col != b._col)
-                throw new MatrixSizeMismatchException($"Size: {a._row} * {a._col}");
+                throw new SizeMismatchException($"Size: {a._row} * {a._col}");
 
             Matrix result = new Matrix(a._row, a._col);
             for (int i = 0, s = a._row * a._col; i < s; i++)
@@ -177,7 +176,7 @@ namespace Kokuu
         {
             if (a is null) throw new ArgumentNullException(nameof(a));
             if (b is null) throw new ArgumentNullException(nameof(b));
-            if (a._col != b._row) throw new MatrixSizeMismatchException($"Row Counts: {a._col}");
+            if (a._col != b._row) throw new SizeMismatchException($"Row Counts: {a._col}");
 
             Matrix result = new Matrix(a._row, b._col);
             for (int i = 0; i < a._row; i++)
@@ -208,12 +207,21 @@ namespace Kokuu
                 result._val[i] = d * a._val[i];
             return result;
         }
+        public static Matrix operator /(Matrix a, float d)
+        {
+            if (a is null) throw new ArgumentNullException(nameof(a));
+            
+            Matrix result = new Matrix(a._row, a._col);
+            for (int i = 0, s = a._row * a._col; i < s; i++)
+                result._val[i] = a._val[i] / d;
+            return result;
+        }
 
         public static Matrix Pow(Matrix m, int p)
         {
             if (m is null) throw new ArgumentNullException(nameof(m));
             if (m.row != m.column)
-                throw new MatrixSizeMismatchException($"Row Counts({m.row}) Equals to Column Counts({m.column})");
+                throw new SizeMismatchException($"Row Counts({m.row}) Equals to Column Counts({m.column})");
 
             if (p < 0)
             {
@@ -251,7 +259,7 @@ namespace Kokuu
             get
             {
                 if (row != column)
-                    throw new MatrixSizeMismatchException($"Row Counts({row}) Equals to Column Counts({column})");
+                    throw new SizeMismatchException($"Row Counts({row}) Equals to Column Counts({column})");
 
                 return new Matrix(this).Identify();
             }
@@ -262,7 +270,7 @@ namespace Kokuu
             get
             {
                 if (row != column)
-                    throw new MatrixSizeMismatchException($"Row Counts({row}) Equals to Column Counts({column})");
+                    throw new SizeMismatchException($"Row Counts({row}) Equals to Column Counts({column})");
                 
                 Matrix mat = new(row, row * 2)
                 {
