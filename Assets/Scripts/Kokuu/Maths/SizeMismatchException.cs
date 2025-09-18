@@ -1,6 +1,6 @@
 using System;
 
-namespace Kokuu
+namespace Kokuu.Maths
 {
     public class SizeMismatchException : Exception
     {

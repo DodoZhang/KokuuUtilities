@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace Kokuu
+namespace Kokuu.Maths
 {
     [Serializable]
     public class Matrix : IEquatable<Matrix>, IFormattable, ISerializationCallbackReceiver
@@ -379,7 +379,9 @@ namespace Kokuu
         private class MatrixPropertyDrawer : PropertyDrawer
         {
             private static readonly GUIContent[] sublabels = { new("R"), new("C") };
-            
+
+            private const float SizeLabelWidth = 12.5f;
+            private const float SizeFieldSpacing = 4;
             private const int MaxRowCount = 10;
             private const float MinColumnWidth = 32;
             private const float MatrixHorizontalSpacing = 2;
@@ -389,7 +391,7 @@ namespace Kokuu
             public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
             {
                 int lineCount = property.isExpanded
-                    ? 3 + Mathf.Min(property.FindPropertyRelative(nameof(_row)).intValue, MaxRowCount)
+                    ? 2 + Mathf.Min(property.FindPropertyRelative(nameof(_row)).intValue, MaxRowCount)
                     : 1;
                 return lineCount * EditorGUIUtility.singleLineHeight +
                        (lineCount - 1) * EditorGUIUtility.standardVerticalSpacing;
@@ -406,52 +408,69 @@ namespace Kokuu
                 int row = rowProperty.intValue;
                 int column = columnProperty.intValue;
                 
-                
                 Rect titlePosition = position;
+                float sizeFieldWidth = EditorGUIUtility.fieldWidth + SizeLabelWidth;
+                titlePosition.width -= 2 * (sizeFieldWidth + SizeFieldSpacing);
                 titlePosition.height = EditorGUIUtility.singleLineHeight;
                 EditorGUI.BeginProperty(titlePosition, label, property);
                 property.isExpanded = EditorGUI.BeginFoldoutHeaderGroup(titlePosition, property.isExpanded, label);
+
+                EditorGUI.BeginChangeCheck();
+                
+                int indentLevel = EditorGUI.indentLevel;
+                EditorGUI.indentLevel = 0;
+                float labelWidth = EditorGUIUtility.labelWidth;
+                EditorGUIUtility.labelWidth = SizeLabelWidth;
+                
+                Rect sizePosition = titlePosition;
+                sizePosition.x = sizePosition.xMax + SizeFieldSpacing;
+                sizePosition.width = sizeFieldWidth;
+                rowProperty.intValue =
+                    EditorGUI.DelayedIntField(sizePosition, new GUIContent("R"), rowProperty.intValue);
+                
+                sizePosition.x += sizeFieldWidth + SizeFieldSpacing;
+                columnProperty.intValue =
+                    EditorGUI.DelayedIntField(sizePosition, new GUIContent("C"), columnProperty.intValue);
+                
+                EditorGUIUtility.labelWidth = labelWidth;
+                EditorGUI.indentLevel = indentLevel;
+                
+                if (EditorGUI.EndChangeCheck())
+                {
+                    int newRow = rowProperty.intValue;
+                    int newColumn = columnProperty.intValue;
+                    
+                    if (newRow != row || newColumn != column)
+                    {
+                        if (newRow * newColumn > row * column)
+                            valuesProperty.arraySize = newRow * newColumn;
+
+                        if (newColumn > column)
+                        {
+                            for (int r = Mathf.Min(row, newRow) - 1; r >= 0; r--)
+                            for (int c = Mathf.Min(column, newColumn) - 1; c >= 0; c--)
+                                valuesProperty.MoveArrayElement(r * column + c, r * newColumn + c);
+                        }
+                        else if (newColumn < column)
+                        {
+                            for (int r = 0, rc = Mathf.Min(row, newRow); r < rc; r++)
+                            for (int c = 0, sc = Mathf.Min(column, newColumn); c < sc; c++)
+                                valuesProperty.MoveArrayElement(r * column + c, r * newColumn + c);
+                        }
+                        
+                        valuesProperty.arraySize = newRow * newColumn;
+                        row = newRow;
+                        column = newColumn;
+                    }
+                }
                 
                 if (property.isExpanded)
                 {
                     EditorGUI.indentLevel++;
 
-                    Rect sizePosition = titlePosition;
-                    sizePosition.y += lineHeight;
-                    EditorGUI.BeginChangeCheck();
-                    EditorGUI.MultiPropertyField(sizePosition, sublabels, rowProperty.Copy(), new GUIContent("Size"));
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        int newRow = rowProperty.intValue;
-                        int newColumn = columnProperty.intValue;
-                        
-                        if (newRow != row || newColumn != column)
-                        {
-                            if (newRow * newColumn > row * column)
-                                valuesProperty.arraySize = newRow * newColumn;
-
-                            if (newColumn > column)
-                            {
-                                for (int r = Mathf.Min(row, newRow) - 1; r >= 0; r--)
-                                for (int c = Mathf.Min(column, newColumn) - 1; c >= 0; c--)
-                                    valuesProperty.MoveArrayElement(r * column + c, r * newColumn + c);
-                            }
-                            else if (newColumn < column)
-                            {
-                                for (int r = 0, rc = Mathf.Min(row, newRow); r < rc; r++)
-                                for (int c = 0, sc = Mathf.Min(column, newColumn); c < sc; c++)
-                                    valuesProperty.MoveArrayElement(r * column + c, r * newColumn + c);
-                            }
-                            
-                            valuesProperty.arraySize = newRow * newColumn;
-                            row = newRow;
-                            column = newColumn;
-                        }
-                    }
-
                     Rect matrixPosition = position;
-                    matrixPosition.y += 2 * lineHeight;
-                    matrixPosition.height -= 2 * lineHeight;
+                    matrixPosition.y += lineHeight;
+                    matrixPosition.height -= lineHeight;
                     matrixPosition = EditorGUI.IndentedRect(matrixPosition);
                     
                     Rect matrixColumnLabelsPosition = matrixPosition;
@@ -473,7 +492,7 @@ namespace Kokuu
                     if (row > MaxRowCount) matrixValuesWidth -= GUI.skin.verticalScrollbar.fixedWidth;
                     float valueWidth = Mathf.Max((matrixValuesWidth + MatrixHorizontalSpacing) / column, MinColumnWidth);
 
-                    int indentLevel = EditorGUI.indentLevel;
+                    indentLevel = EditorGUI.indentLevel;
                     EditorGUI.indentLevel = 0;
                     
                     GUIStyle labelStyle = new(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
@@ -525,12 +544,6 @@ namespace Kokuu
                     EditorGUI.indentLevel = indentLevel;
                     
                     EditorGUI.indentLevel--;
-                }
-                else
-                {
-                    titlePosition.x += EditorGUIUtility.labelWidth;
-                    titlePosition.width -= EditorGUIUtility.labelWidth;
-                    EditorGUI.LabelField(titlePosition, new GUIContent($"Matrix({row} * {column})"));
                 }
                 
                 EditorGUI.EndFoldoutHeaderGroup();

@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace Kokuu
+namespace Kokuu.Maths
 {
     [Serializable]
     public class Vector : IEquatable<Vector>, IFormattable, ISerializationCallbackReceiver

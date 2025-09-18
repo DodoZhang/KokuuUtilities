@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace Kokuu
+namespace Kokuu.Maths
 {
     [Serializable]
     public struct Complex : IEquatable<Complex>, IFormattable
