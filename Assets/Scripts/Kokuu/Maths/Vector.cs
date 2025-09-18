@@ -101,7 +101,7 @@ namespace Kokuu.Maths
         public string ToString(string format) => ToString(format, null);
         public string ToString(string format, IFormatProvider formatProvider)
         {
-            if (string.IsNullOrEmpty(format)) format = "F2";
+            if (string.IsNullOrEmpty(format)) format = "G";
             formatProvider ??= CultureInfo.InvariantCulture.NumberFormat;
             StringBuilder builder = new StringBuilder().Append("(");
             for (int i = 0; i < _dim; i++)

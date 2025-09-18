@@ -123,7 +123,7 @@ namespace Kokuu.Maths
         public string ToString(string format) => ToString(format, null);
         public string ToString(string format, IFormatProvider formatProvider)
         {
-            if (string.IsNullOrEmpty(format)) format = "F2";
+            if (string.IsNullOrEmpty(format)) format = "G";
             formatProvider ??= CultureInfo.InvariantCulture.NumberFormat;
             StringBuilder builder = new();
             for (int r = 0; r < _row; r++)
@@ -282,7 +282,7 @@ namespace Kokuu.Maths
             }
         }
 
-        public float trace
+        public int trace
         {
             get
             {
@@ -296,7 +296,7 @@ namespace Kokuu.Maths
                         for (int j = i + 1; j <= row; j++)
                         {
                             if (j == row) goto SkipRow;
-                            if (!(Math.Abs(mat[j, i]) >= float.Epsilon)) continue;
+                            if (Math.Abs(mat[j, i]) < float.Epsilon) continue;
                             mat.SwapRows(i, j);
                             break;
                         }
@@ -378,12 +378,10 @@ namespace Kokuu.Maths
         [CustomPropertyDrawer(typeof(Matrix))]
         private class MatrixPropertyDrawer : PropertyDrawer
         {
-            private static readonly GUIContent[] sublabels = { new("R"), new("C") };
-
             private const float SizeLabelWidth = 12.5f;
             private const float SizeFieldSpacing = 4;
             private const int MaxRowCount = 10;
-            private const float MinColumnWidth = 32;
+            private const float MinColumnWidth = 30;
             private const float MatrixHorizontalSpacing = 2;
 
             private Vector2 scrollPosition;
