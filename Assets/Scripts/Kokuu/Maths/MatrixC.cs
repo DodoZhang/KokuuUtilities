@@ -271,7 +271,7 @@ namespace Kokuu.Maths
                 if (row != column)
                     throw new SizeMismatchException($"Row Counts({row}) Equals to Column Counts({column})");
 
-                return new MatrixC(this).Identify();
+                return new MatrixC(this).RowReduce().determinant;
             }
         }
 
@@ -287,40 +287,67 @@ namespace Kokuu.Maths
                     [.., ..row] = this,
                     [.., row..] = Identity(row)
                 };
-                mat.Identify();
-                return mat[.., row..];
+                return mat.RowReduce().determinant.IsZero() ? null : mat[.., row..];
             }
         }
 
-        public int trace
+        public int trace => new MatrixC(this).RowReduce().trace;
+
+        public (Complex determinant, int trace, int[] echelon) RowReduce()
         {
-            get
+            int i, j;
+            Complex det = Complex.one;
+            int[] echelon = new int[column];
+            
+            for (i = 0, j = 0; i < row && j < column; i++, j++)
             {
-                int tra = 0;
-                MatrixC mat = row >= column ? new MatrixC(this) : transposed;
-                
-                for (int i = 0; i < row; i++)
+                while (j < column && this[i, j].IsZero())
                 {
-                    if (mat[i, i].sqrMagnitude < float.Epsilon)
+                    for (int k = i + 1; k < row; k++)
                     {
-                        for (int j = i + 1; j <= row; j++)
-                        {
-                            if (j == row) goto SkipRow;
-                            if (mat[j, i].sqrMagnitude < float.Epsilon) continue;
-                            mat.SwapRows(i, j);
-                            break;
-                        }
+                        if (this[k, j].IsZero()) continue;
+                        SwapRows(k, i);
+                        det = -det;
+                        break;
                     }
-                    
-                    Complex s = mat[i, i];
-                    for (int j = i + 1; j < row; j++)
-                        mat.AddRow(j, -mat[j, i] / s, i);
-                    tra++;
-                    
-                    SkipRow: ;
+
+                    if (!this[i, j].IsZero()) continue;
+                    det = Complex.zero;
+                    echelon[j++] = -1;
+                }
+                
+                if (j >= column) break;
+
+                Complex s = this[i, j];
+                ScaleRow(i, Complex.one / s);
+                det *= s;
+                
+                for (int k = 0; k < row; k++)
+                {
+                    if (k == i) continue;
+                    AddRow(k, -this[k, j], i);
                 }
 
-                return tra;
+                echelon[j] = i;
+            }
+            
+            for (; j < column; j++) echelon[j] = -1;
+            
+            return (det, i, echelon);
+
+            void SwapRows(int r1, int r2)
+            {
+                for (int c = 0; c < column; c++)
+                    (this[r1, c], this[r2, c]) = (this[r2, c], this[r1, c]);
+            }
+            void ScaleRow(int r, Complex s)
+            {
+                for (int c = 0; c < column; c++) this[r, c] *= s;
+            }
+            void AddRow(int r1, Complex s, int r2)
+            {
+                for (int c = 0; c < column; c++)
+                    this[r1, c] += s * this[r2, c];
             }
         }
 
@@ -339,53 +366,6 @@ namespace Kokuu.Maths
             for (int c = 0; c < mat.column; c++)
                 result[r, c] = (float)mat[r, c];
             return result;
-        }
-
-        private Complex Identify()
-        {
-            Complex det = 1;
-            
-            for (int i = 0; i < row; i++)
-            {
-                if (this[i, i].sqrMagnitude < float.Epsilon)
-                {
-                    for (int j = i + 1; j <= row; j++)
-                    {
-                        if (j == row) return 0;
-                        if (this[j, i].sqrMagnitude < float.Epsilon) continue;
-                        SwapRows(i, j);
-                        det = -det;
-                        break;
-                    }
-                }
-
-                Complex s = this[i, i];
-                ScaleRow(i, 1 / s);
-                det *= s;
-
-                for (int j = 0; j < row; j++)
-                {
-                    if (j == i) continue;
-                    AddRow(j, -this[j, i], i);
-                }
-            }
-                
-            return det;
-        }
-
-        private void SwapRows(int i, int j)
-        {
-            for (int c = 0; c < column; c++)
-                (this[i, c], this[j, c]) = (this[j, c], this[i, c]);
-        }
-        private void ScaleRow(int r, Complex s)
-        {
-            for (int c = 0; c < column; c++) this[r, c] *= s;
-        }
-        private void AddRow(int i, Complex s, int j)
-        {
-            for (int c = 0; c < column; c++)
-                this[i, c] += s * this[j, c];
         }
         
         public void OnBeforeSerialize() { }

@@ -274,7 +274,7 @@ namespace Kokuu.Maths
                 if (row != column)
                     throw new SizeMismatchException($"Row Counts({row}) Equals to Column Counts({column})");
 
-                return new Matrix(this).Identify();
+                return new Matrix(this).RowReduce().determinant;
             }
         }
 
@@ -290,88 +290,68 @@ namespace Kokuu.Maths
                     [.., ..row] = this,
                     [.., row..] = Identity(row)
                 };
-                mat.Identify();
-                return mat[.., row..];
+                return mat.RowReduce().determinant.IsZero() ? null : mat[.., row..];
             }
         }
 
-        public int trace
-        {
-            get
-            {
-                int tra = 0;
-                Matrix mat = row >= column ? new Matrix(this) : transposed;
-                
-                for (int i = 0; i < row; i++)
-                {
-                    if (Math.Abs(mat[i, i]) < float.Epsilon)
-                    {
-                        for (int j = i + 1; j <= row; j++)
-                        {
-                            if (j == row) goto SkipRow;
-                            if (Math.Abs(mat[j, i]) < float.Epsilon) continue;
-                            mat.SwapRows(i, j);
-                            break;
-                        }
-                    }
-                    
-                    float s = mat[i, i];
-                    for (int j = i + 1; j < row; j++)
-                        mat.AddRow(j, -mat[j, i] / s, i);
-                    tra++;
-                    
-                    SkipRow: ;
-                }
+        public int trace => new Matrix(this).RowReduce().trace;
 
-                return tra;
-            }
-        }
-
-        private float Identify()
+        public (float determinant, int trace, int[] echelon) RowReduce()
         {
+            int i, j;
             float det = 1;
+            int[] echelon = new int[column];
             
-            for (int i = 0; i < row; i++)
+            for (i = 0, j = 0; i < row && j < column; i++, j++)
             {
-                if (Math.Abs(this[i, i]) < float.Epsilon)
+                while (j < column && this[i, j].IsZero())
                 {
-                    for (int j = i + 1; j <= row; j++)
+                    for (int k = i + 1; k < row; k++)
                     {
-                        if (j == row) return 0;
-                        if (Math.Abs(this[j, i]) < float.Epsilon) continue;
-                        SwapRows(i, j);
+                        if (this[k, j].IsZero()) continue;
+                        SwapRows(k, i);
                         det = -det;
                         break;
                     }
-                }
 
-                float s = this[i, i];
+                    if (!this[i, j].IsZero()) continue;
+                    det = 0;
+                    echelon[j++] = -1;
+                }
+                
+                if (j >= column) break;
+
+                float s = this[i, j];
                 ScaleRow(i, 1 / s);
                 det *= s;
-
-                for (int j = 0; j < row; j++)
-                {
-                    if (j == i) continue;
-                    AddRow(j, -this[j, i], i);
-                }
-            }
                 
-            return det;
-        }
+                for (int k = 0; k < row; k++)
+                {
+                    if (k == i) continue;
+                    AddRow(k, -this[k, j], i);
+                }
 
-        private void SwapRows(int i, int j)
-        {
-            for (int c = 0; c < column; c++)
-                (this[i, c], this[j, c]) = (this[j, c], this[i, c]);
-        }
-        private void ScaleRow(int r, float s)
-        {
-            for (int c = 0; c < column; c++) this[r, c] *= s;
-        }
-        private void AddRow(int i, float s, int j)
-        {
-            for (int c = 0; c < column; c++)
-                this[i, c] += s * this[j, c];
+                echelon[j] = i;
+            }
+            
+            for (; j < column; j++) echelon[j] = -1;
+            
+            return (det, i, echelon);
+
+            void SwapRows(int r1, int r2)
+            {
+                for (int c = 0; c < column; c++)
+                    (this[r1, c], this[r2, c]) = (this[r2, c], this[r1, c]);
+            }
+            void ScaleRow(int r, float s)
+            {
+                for (int c = 0; c < column; c++) this[r, c] *= s;
+            }
+            void AddRow(int r1, float s, int r2)
+            {
+                for (int c = 0; c < column; c++)
+                    this[r1, c] += s * this[r2, c];
+            }
         }
         
         public void OnBeforeSerialize() { }

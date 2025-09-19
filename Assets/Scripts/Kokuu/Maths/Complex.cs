@@ -38,6 +38,7 @@ namespace Kokuu.Maths
         }
 
         public static Complex zero => new(0, 0);
+        public static Complex one => new(1, 0);
         public static Complex j => new(0, 1);
 
         public static Complex Lerp(Complex a, Complex b, float t)
