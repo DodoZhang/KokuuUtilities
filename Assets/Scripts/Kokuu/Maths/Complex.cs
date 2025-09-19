@@ -329,7 +329,7 @@ namespace Kokuu.Maths
                 string str = new Complex(realProperty.floatValue, imagProperty.floatValue).ToString();
                 
                 EditorGUI.BeginChangeCheck();
-                str = EditorGUI.DelayedTextField(position, label, str);
+                str = EditorGUI.TextField(position, label, str);
                 if (EditorGUI.EndChangeCheck())
                 {
                     if (TryParse(str, out Complex c))
