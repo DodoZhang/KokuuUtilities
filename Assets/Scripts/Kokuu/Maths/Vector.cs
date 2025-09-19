@@ -102,11 +102,15 @@ namespace Kokuu.Maths
         public string ToString(string format, IFormatProvider formatProvider)
         {
             if (string.IsNullOrEmpty(format)) format = "G";
+            bool autoFormat = format == "A";
+            if (autoFormat) format = "G";
             formatProvider ??= CultureInfo.InvariantCulture.NumberFormat;
+            
             StringBuilder builder = new StringBuilder().Append("(");
             for (int i = 0; i < _dim; i++)
             {
-                builder.Append(this[i].ToString(format, formatProvider));
+                if (autoFormat && this[i].IsZero()) builder.Append(0);
+                else builder.Append(this[i].ToString(format, formatProvider));
                 if (i != _dim - 1) builder.Append(", ");
             }
             return builder.Append(")").ToString();

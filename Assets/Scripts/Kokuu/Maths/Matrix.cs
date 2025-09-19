@@ -123,14 +123,18 @@ namespace Kokuu.Maths
         public string ToString(string format) => ToString(format, null);
         public string ToString(string format, IFormatProvider formatProvider)
         {
-            if (string.IsNullOrEmpty(format)) format = "G";
+            if (string.IsNullOrEmpty(format)) format = "A";
+            bool autoFormat = format == "A";
+            if (autoFormat) format = "G";
             formatProvider ??= CultureInfo.InvariantCulture.NumberFormat;
+            
             StringBuilder builder = new();
             for (int r = 0; r < _row; r++)
             {
                 for (int c = 0; c < _col; c++)
                 {
-                    builder.Append(this[r, c].ToString(format, formatProvider));
+                    if (autoFormat && this[r, c].IsZero()) builder.Append(0);
+                    else builder.Append(this[r, c].ToString(format, formatProvider));
                     if (c != _col - 1) builder.Append('\t');
                 }
                 if (r != _row - 1) builder.Append('\n');

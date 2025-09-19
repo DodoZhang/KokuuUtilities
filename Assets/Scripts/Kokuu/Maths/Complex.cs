@@ -65,7 +65,7 @@ namespace Kokuu.Maths
         public void Normalize()
         {
             float mag = magnitude;
-            if (mag < float.Epsilon) this = zero;
+            if (mag.IsZero()) this = zero;
             else this /= mag;
         }
 
@@ -88,7 +88,7 @@ namespace Kokuu.Maths
             set
             {
                 float mag = magnitude;
-                if (mag < float.Epsilon) this = new Complex(value, 0);
+                if (mag.IsZero()) this = new Complex(value, 0);
                 else this *= value / mag;
             }
         }
@@ -103,28 +103,24 @@ namespace Kokuu.Maths
         public string ToString(string format) => ToString(format, null);
         public string ToString(string format, IFormatProvider formatProvider)
         {
-            if (string.IsNullOrEmpty(format)) format = "G";
+            if (string.IsNullOrEmpty(format)) format = "A";
+            bool autoFormat = format == "A";
+            if (autoFormat) format = "G";
             formatProvider ??= CultureInfo.InvariantCulture.NumberFormat;
 
-            bool formatIsG = format == "G";
-            bool realIsZero = real is > -float.Epsilon and < float.Epsilon;
-            bool imagIsZero = imag is > -float.Epsilon and < float.Epsilon;
-            bool imagIsMinusOne = imag + 1 is > -float.Epsilon and < float.Epsilon;
-            bool imagIsOne = imag - 1 is > -float.Epsilon and < float.Epsilon;
-
-            if (realIsZero)
+            if (real.IsZero())
             {
-                if (imagIsZero) return "0";
-                if (formatIsG && imagIsMinusOne) return "-j";
-                if (formatIsG && imagIsOne) return "j";
+                if (imag.IsZero()) return "0";
+                if (autoFormat && imag.IsMinusOne()) return "-j";
+                if (autoFormat && imag.IsOne()) return "j";
                 if (imag < 0) return $"-j{(-imag).ToString(format, formatProvider)}";
                 return $"j{imag.ToString(format, formatProvider)}";
             }
             else
             {
-                if (imagIsZero) return real.ToString(format, formatProvider);
-                if (formatIsG && imagIsMinusOne) return $"{real.ToString(format, formatProvider)} - j";
-                if (formatIsG && imagIsOne) return $"{real.ToString(format, formatProvider)} + j";
+                if (imag.IsZero()) return real.ToString(format, formatProvider);
+                if (autoFormat && imag.IsMinusOne()) return $"{real.ToString(format, formatProvider)} - j";
+                if (autoFormat && imag.IsOne()) return $"{real.ToString(format, formatProvider)} + j";
                 if (imag < 0) return $"{real.ToString(format, formatProvider)} -" +
                                      $" j{(-imag).ToString(format, formatProvider)}";
                 return $"{real.ToString(format, formatProvider)} +" +
@@ -151,6 +147,8 @@ namespace Kokuu.Maths
 
         public static bool operator ==(Complex lhs, Complex rhs) => lhs.Equals(rhs);
         public static bool operator !=(Complex lhs, Complex rhs) => !lhs.Equals(rhs);
+        
+        public bool IsZero() => real.IsZero() && imag.IsZero();
 
         public static implicit operator Complex(float x) => new(x, 0);
         public static explicit operator float(Complex x) => x.real;
