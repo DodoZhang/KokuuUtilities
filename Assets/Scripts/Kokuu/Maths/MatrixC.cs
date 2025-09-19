@@ -217,6 +217,15 @@ namespace Kokuu.Maths
                 result._val[i] = a._val[i] / d;
             return result;
         }
+        public static MatrixC operator -(MatrixC a)
+        {
+            if (a is null) throw new ArgumentNullException(nameof(a));
+
+            MatrixC result = new MatrixC(a._row, a._col);
+            for (int i = 0, s = a._row * a._col; i < s; i++)
+                result._val[i] = -a._val[i];
+            return result;
+        }
 
         public static MatrixC Pow(MatrixC m, int p)
         {

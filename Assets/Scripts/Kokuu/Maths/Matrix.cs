@@ -220,6 +220,15 @@ namespace Kokuu.Maths
                 result._val[i] = a._val[i] / d;
             return result;
         }
+        public static Matrix operator -(Matrix a)
+        {
+            if (a is null) throw new ArgumentNullException(nameof(a));
+
+            Matrix result = new Matrix(a._row, a._col);
+            for (int i = 0, s = a._row * a._col; i < s; i++)
+                result._val[i] = -a._val[i];
+            return result;
+        }
 
         public static Matrix Pow(Matrix m, int p)
         {

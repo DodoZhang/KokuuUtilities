@@ -175,6 +175,15 @@ namespace Kokuu.Maths
                 result._val[i] = a._val[i] / d;
             return result;
         }
+        public static Vector operator -(Vector a)
+        {
+            if (a is null) throw new ArgumentNullException(nameof(a));
+
+            Vector result = new Vector(a._dim);
+            for (int i = 0; i < a._dim; i++)
+                result._val[i] = -a._val[i];
+            return result;
+        }
         
         public float sqrMagnitude
         {
