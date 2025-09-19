@@ -101,7 +101,7 @@ namespace Kokuu.Maths
         public string ToString(string format) => ToString(format, null);
         public string ToString(string format, IFormatProvider formatProvider)
         {
-            if (string.IsNullOrEmpty(format)) format = "G";
+            if (string.IsNullOrEmpty(format)) format = "A";
             bool autoFormat = format == "A";
             if (autoFormat) format = "G";
             formatProvider ??= CultureInfo.InvariantCulture.NumberFormat;
