@@ -37,8 +37,9 @@ namespace Kokuu.Json
             else if (value is ushort us) builder.Append(us);
             else if (value is uint ui) builder.Append(ui);
             else if (value is ulong ul) builder.Append(ul);
-            else if (value is float f) builder.Append($"{f:0.0###########}");
-            else if (value is double d) builder.Append($"{d:0.0###########}");
+            else if (value is float f) builder.Append($"{f:0.0########}");
+            else if (value is double d) builder.Append($"{d:0.0################}");
+            else if (value is decimal m) builder.Append($"{m:0.0############################}");
             else if (value is bool b) builder.Append(b ? "true" : "false");
             else EncodeSerializable(value);
         }
