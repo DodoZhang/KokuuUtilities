@@ -394,7 +394,7 @@ namespace Kokuu.Maths
                 }
                 
                 int decimalBegin = index;
-                if (!TryPhasePositiveInteger()) return false;
+                if (!TryPhasePositiveInteger(true)) return false;
                 int decimalEnd = index;
                 PhaseWhiteSpace();
                 
@@ -427,10 +427,10 @@ namespace Kokuu.Maths
                 return true;
             }
 
-            private bool TryPhasePositiveInteger()
+            private bool TryPhasePositiveInteger(bool allowZeroPrefix = false)
             {
                 if (!TryPhaseDigit(out int digit)) return false;
-                if (digit == 0) return true;
+                if (digit == 0 && !allowZeroPrefix) return true;
                 while (TryPhaseDigit(out _)) { }
                 return true;
             }
