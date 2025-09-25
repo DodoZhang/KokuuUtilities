@@ -32,14 +32,16 @@ namespace Kokuu.Maths
             }
             catch
             {
-                result = zero;
+                result = Zero;
                 return false;
             }
         }
 
-        public static Complex zero => new(0, 0);
-        public static Complex one => new(1, 0);
+        public static Complex Zero => new(0, 0);
+        public static Complex One => new(1, 0);
         public static Complex j => new(0, 1);
+        
+        public bool isZero => real.IsZero() && imag.IsZero();
 
         public static Complex Lerp(Complex a, Complex b, float t)
         {
@@ -66,7 +68,7 @@ namespace Kokuu.Maths
         public void Normalize()
         {
             float mag = magnitude;
-            if (mag.IsZero()) this = zero;
+            if (mag.IsZero()) this = Zero;
             else this /= mag;
         }
 
@@ -148,8 +150,6 @@ namespace Kokuu.Maths
 
         public static bool operator ==(Complex lhs, Complex rhs) => lhs.Equals(rhs);
         public static bool operator !=(Complex lhs, Complex rhs) => !lhs.Equals(rhs);
-        
-        public bool IsZero() => real.IsZero() && imag.IsZero();
 
         public static implicit operator Complex(float x) => new(x, 0);
         public static explicit operator float(Complex x) => x.real;
@@ -164,7 +164,7 @@ namespace Kokuu.Maths
                 str = text;
                 
                 PhaseWhiteSpace();
-                if (index >= str.Length) return zero;
+                if (index >= str.Length) return Zero;
                 
                 Complex c = PhaseNumber(true);
                 while (index < str.Length) c += PhaseNumber();

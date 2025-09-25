@@ -287,7 +287,7 @@ namespace Kokuu.Maths
                     [.., ..row] = this,
                     [.., row..] = Identity(row)
                 };
-                return mat.RowReduce().determinant.IsZero() ? null : mat[.., row..];
+                return mat.RowReduce().determinant.isZero ? null : mat[.., row..];
             }
         }
 
@@ -296,30 +296,30 @@ namespace Kokuu.Maths
         public (Complex determinant, int trace, int[] echelon) RowReduce()
         {
             int i, j;
-            Complex det = Complex.one;
+            Complex det = Complex.One;
             int[] echelon = new int[column];
             
             for (i = 0, j = 0; i < row && j < column; i++, j++)
             {
-                while (j < column && this[i, j].IsZero())
+                while (j < column && this[i, j].isZero)
                 {
                     for (int k = i + 1; k < row; k++)
                     {
-                        if (this[k, j].IsZero()) continue;
+                        if (this[k, j].isZero) continue;
                         SwapRows(k, i);
                         det = -det;
                         break;
                     }
 
-                    if (!this[i, j].IsZero()) continue;
-                    det = Complex.zero;
+                    if (!this[i, j].isZero) continue;
+                    det = Complex.Zero;
                     echelon[j++] = -1;
                 }
                 
                 if (j >= column) break;
 
                 Complex s = this[i, j];
-                ScaleRow(i, Complex.one / s);
+                ScaleRow(i, Complex.One / s);
                 det *= s;
                 
                 for (int k = 0; k < row; k++)

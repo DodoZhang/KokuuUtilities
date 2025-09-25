@@ -126,7 +126,7 @@ namespace Kokuu.Maths
                     trace++;
             
             for (int i = trace; i < row; i++)
-                if (!C[i, column].IsZero())
+                if (!C[i, column].isZero)
                     return SolutionSetC.Empty;
             
             VectorC specialSolution = new(column);

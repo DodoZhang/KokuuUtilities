@@ -227,7 +227,7 @@ namespace Kokuu.Maths
             if (b is null) throw new ArgumentNullException(nameof(b));
             if (a._dim != b._dim) throw new SizeMismatchException($"Dimension: {a._dim}");
             
-            Complex result = Complex.zero;
+            Complex result = Complex.Zero;
             for (int i = 0; i < a._dim; i++)
                 result += a._val[i] * b._val[i].conjugated;
             return result;
