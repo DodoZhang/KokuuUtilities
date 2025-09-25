@@ -147,5 +147,76 @@ namespace Kokuu.Maths
                 fundamentalSystem = fundamentalSystem
             };
         }
+        
+        public class SolutionSetF : IFormattable
+        {
+            public VectorF specialSolution;
+            public VectorF[] fundamentalSystem;
+            
+            public bool isEmpty => specialSolution is null;
+            public bool isUnique => !isEmpty && !isInfinite;
+            public bool isInfinite => fundamentalSystem.Length > 0;
+
+            public static SolutionSetF Empty => new()
+            {
+                specialSolution = null,
+                fundamentalSystem = Array.Empty<VectorF>()
+            };
+            
+            public override string ToString() => ToString(null, null);
+            public string ToString(string format) => ToString(format, null);
+            public string ToString(string format, IFormatProvider formatProvider)
+            {
+                if (isEmpty) return "X = Empty";
+                if (isUnique) return $"X = {specialSolution.ToString(format, formatProvider)}";
+                
+                StringBuilder builder = new();
+                builder.Append($"X \t= \t{specialSolution.ToString(format, formatProvider)}");
+                for (int i = 0; i < fundamentalSystem.Length; i++)
+                    builder.Append($"\n\t+ k{i + 1} * \t{fundamentalSystem[i].ToString(format, formatProvider)}");
+                return builder.ToString();
+            }
+        }
+
+        public static SolutionSetF Solve(MatrixF A, VectorF B)
+        {
+            if (A.row != B.dimension) throw new SizeMismatchException($"Dimension: {A.row}");
+
+            int row = A.row, column = A.column;
+            MatrixF C = new MatrixF(row, column + 1)
+            {
+                [.., ..^1] = A,
+                [.., ^1..] = B
+            };
+
+            int[] echelon = C.RowReduce().echelon;
+            
+            int trace = 0;
+            for (int i = 0; i < column; i++)
+                if (echelon[i] != -1)
+                    trace++;
+            
+            for (int i = trace; i < row; i++)
+                if (!C[i, column].isZero)
+                    return SolutionSetF.Empty;
+            
+            VectorF specialSolution = new(column);
+            for (int i = 0; i < column; i++)
+                if (echelon[i] != -1)
+                    specialSolution[i] = C[echelon[i], column];
+            
+            VectorF[] fundamentalSystem = new VectorF[column - trace];
+            for (int i = 0, j = 0; j < column; j++)
+            {
+                if (echelon[j] != -1) continue;
+                fundamentalSystem[i++] = new VectorF(-C.ColumnAt(j)) { [j] = 1 };
+            }
+
+            return new SolutionSetF
+            {
+                specialSolution = specialSolution,
+                fundamentalSystem = fundamentalSystem
+            };
+        }
     }
 }

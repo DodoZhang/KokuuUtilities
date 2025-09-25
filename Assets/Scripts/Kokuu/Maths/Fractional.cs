@@ -51,7 +51,8 @@ namespace Kokuu.Maths
         public static Fractional NaN => new(0, 0);
         public static Fractional PositiveInfinity => new(1, 0);
         public static Fractional NegativeInfinity => new(-1, 0);
-        
+
+        public bool isZero => numerator == 0 && denominator != 0;
         public bool isNaN => numerator == 0 && denominator == 0;
         public bool isPositiveInfinity => numerator == 1 && denominator == 0;
         public bool isNegativeInfinity => numerator == -1 && denominator == 0;
