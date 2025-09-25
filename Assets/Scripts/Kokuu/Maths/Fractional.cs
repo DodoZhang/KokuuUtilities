@@ -316,7 +316,7 @@ namespace Kokuu.Maths
                         }
                         numerator = numerator * 10 + digit;
                     }
-                    f.Set(numerator, 1, false);
+                    f.Set(isNegative ? -numerator : numerator, 1, false);
                     return true;
                 }
                 
@@ -352,7 +352,7 @@ namespace Kokuu.Maths
                     for (int i = 0; i < -deltaRemaining; i++)
                         numerator /= 10;
                 
-                f.Set(numerator, denominator, false);
+                f.Set(isNegative ? -numerator : numerator, denominator, false);
                 return true;
             }
 
@@ -389,7 +389,7 @@ namespace Kokuu.Maths
                         }
                         numerator = numerator * 10 + digit;
                     }
-                    f.Set(numerator, 1, false);
+                    f.Set(isNegative ? -numerator : numerator, 1, false);
                     return true;
                 }
                 
