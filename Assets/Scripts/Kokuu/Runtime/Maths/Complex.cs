@@ -117,12 +117,12 @@ namespace Kokuu.Maths
             else
             {
                 if (imag.IsZero()) return real.ToString(format, formatProvider);
-                if (autoFormat && imag.IsMinusOne()) return $"{real.ToString(format, formatProvider)} - j";
-                if (autoFormat && imag.IsOne()) return $"{real.ToString(format, formatProvider)} + j";
-                if (imag < 0) return $"{real.ToString(format, formatProvider)} -" +
-                                     $" j{(-imag).ToString(format, formatProvider)}";
-                return $"{real.ToString(format, formatProvider)} +" +
-                       $" j{imag.ToString(format, formatProvider)}";
+                if (autoFormat && imag.IsMinusOne()) return $"{real.ToString(format, formatProvider)}-j";
+                if (autoFormat && imag.IsOne()) return $"{real.ToString(format, formatProvider)}+j";
+                if (imag < 0) return $"{real.ToString(format, formatProvider)}-" +
+                                     $"j{(-imag).ToString(format, formatProvider)}";
+                return $"{real.ToString(format, formatProvider)}+" +
+                       $"j{imag.ToString(format, formatProvider)}";
             }
         }
 
