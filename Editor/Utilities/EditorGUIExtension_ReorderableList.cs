@@ -5,10 +5,8 @@ using UnityEditorInternal;
 
 namespace Kokuu.Editor
 {
-    public static class EditorGUIExtension
+    public static partial class EditorGUIExtension
     {
-        #region ReorderableList
-        
         private const int MaxReorderableListBufferSize = 64;
 
         private struct ReorderableListBuffer
@@ -57,7 +55,5 @@ namespace Kokuu.Editor
             list = buffer.list;
             return false;
         }
-        
-        #endregion
     }
 }
