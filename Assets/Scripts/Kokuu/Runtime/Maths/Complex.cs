@@ -1,11 +1,6 @@
 using System;
 using System.Globalization;
 
-#if UNITY_EDITOR
-using UnityEngine;
-using UnityEditor;
-#endif
-
 namespace Kokuu.Maths
 {
     [Serializable]
@@ -310,38 +305,5 @@ namespace Kokuu.Maths
                 return str[index++];
             }
         }
-
-#if UNITY_EDITOR
-        [CustomPropertyDrawer(typeof(Complex))]
-        private class ComplexPropertyDrawer : PropertyDrawer
-        {
-            public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-            {
-                return EditorGUIUtility.singleLineHeight;
-            }
-
-            public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-            {
-                label = EditorGUI.BeginProperty(position, label, property);
-                
-                SerializedProperty realProperty = property.FindPropertyRelative(nameof(real));
-                SerializedProperty imagProperty = property.FindPropertyRelative(nameof(imag));
-                string str = new Complex(realProperty.floatValue, imagProperty.floatValue).ToString();
-                
-                EditorGUI.BeginChangeCheck();
-                str = EditorGUI.TextField(position, label, str);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    if (TryParse(str, out Complex c))
-                    {
-                        realProperty.floatValue = c.real;
-                        imagProperty.floatValue = c.imag;
-                    }
-                }
-                
-                EditorGUI.EndProperty();
-            }
-        }
-#endif
     }
 }

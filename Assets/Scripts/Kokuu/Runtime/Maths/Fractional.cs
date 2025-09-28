@@ -2,10 +2,6 @@ using System;
 using System.Globalization;
 using UnityEngine;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Kokuu.Maths
 {
     [Serializable]
@@ -46,8 +42,8 @@ namespace Kokuu.Maths
         public static bool TryParse(string text, out Fractional frac) =>
             new FractionalPhaser().TryPhase(text, out frac);
 
-        public static Fractional Zero => new(0, 1);
-        public static Fractional One => new(1, 1);
+        public static Fractional Zero => new(0);
+        public static Fractional One => new(1);
         public static Fractional NaN => new(0, 0);
         public static Fractional PositiveInfinity => new(1, 0);
         public static Fractional NegativeInfinity => new(-1, 0);
@@ -176,7 +172,7 @@ namespace Kokuu.Maths
 
         private const long MaxValue_2 = long.MaxValue / 2;
 
-        public static implicit operator Fractional(int x) => new(x, 1);
+        public static implicit operator Fractional(int x) => new(x);
         public static explicit operator int(Fractional x)
         {
             if (x.isNaN) return 0;
@@ -462,38 +458,5 @@ namespace Kokuu.Maths
                 return false;
             }
         }
-        
-#if UNITY_EDITOR
-        [CustomPropertyDrawer(typeof(Fractional))]
-        private class FractionalPropertyDrawer : PropertyDrawer
-        {
-            public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-            {
-                return EditorGUIUtility.singleLineHeight;
-            }
-
-            public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-            {
-                label = EditorGUI.BeginProperty(position, label, property);
-                
-                SerializedProperty numeratorProperty = property.FindPropertyRelative(nameof(_numerator));
-                SerializedProperty denominatorProperty = property.FindPropertyRelative(nameof(_denominator));
-                string str = new Fractional(numeratorProperty.intValue, denominatorProperty.intValue).ToString();
-                
-                EditorGUI.BeginChangeCheck();
-                str = EditorGUI.TextField(position, label, str);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    if (TryParse(str, out Fractional frac))
-                    {
-                        numeratorProperty.intValue = frac.numerator;
-                        denominatorProperty.intValue = frac.denominator;
-                    }
-                }
-                
-                EditorGUI.EndProperty();
-            }
-        }
-#endif
     }
 }

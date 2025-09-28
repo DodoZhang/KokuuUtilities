@@ -4,10 +4,6 @@ using System.Globalization;
 using System.Text;
 using UnityEngine;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Kokuu.Maths
 {
     [Serializable]
@@ -274,22 +270,6 @@ namespace Kokuu.Maths
             if (_val is null || _val.Length == 0) _val = new float[Math.Max(_dim, 1)];
             _dim = _val.Length;
         }
-
-#if UNITY_EDITOR
-        [CustomPropertyDrawer(typeof(Vector))]
-        private class VectorPropertyDrawer : PropertyDrawer
-        {
-            public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-            {
-                return EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(_val)), label);
-            }
-
-            public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-            {
-                EditorGUI.PropertyField(position, property.FindPropertyRelative(nameof(_val)), label);
-            }
-        }
-#endif
     }
 
     public static class VectorMatrixExtensions

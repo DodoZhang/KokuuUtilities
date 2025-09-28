@@ -1,26 +1,8 @@
-using System;
-using UnityEngine;
-
-#if UNITY_EDITOR
 using UnityEditor;
-#endif
+using UnityEngine;
 
 namespace Kokuu.Structures
 {
-    [Serializable]
-    public struct SerializableKeyValuePair<TKey, TValue>
-    {
-        public TKey key;
-        public TValue value;
-
-        public SerializableKeyValuePair(TKey key, TValue value)
-        {
-            this.key = key;
-            this.value = value;
-        }
-    }
-    
-#if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(SerializableKeyValuePair<,>))]
     internal class SerializableKeyValuePairDrawer : PropertyDrawer
     {
@@ -61,5 +43,4 @@ namespace Kokuu.Structures
             EditorGUI.EndProperty();
         }
     }
-#endif
 }

@@ -1,19 +1,15 @@
 using System;
 using System.Collections.Generic;
-using Object = UnityEngine.Object;
-
-#if UNITY_EDITOR
 using UnityEditor;
 using UnityEditorInternal;
-using UnityEngine;
-#endif
 
-namespace Kokuu.Structures
+namespace Kokuu.Editor
 {
-#if UNITY_EDITOR
-    public static class ReorderableListUtility
+    public static class EditorGUIExtension
     {
-        private const int MaxBufferSize = 64;
+        #region ReorderableList
+        
+        private const int MaxReorderableListBufferSize = 64;
 
         private struct ReorderableListBuffer
         {
@@ -24,13 +20,13 @@ namespace Kokuu.Structures
 
         private static readonly LinkedList<ReorderableListBuffer> buffers = new();
 
-        public static ReorderableList GetList(SerializedProperty property)
+        public static ReorderableList GetReorderableList(SerializedProperty property)
         {
-            TryGetList(property, out ReorderableList list);
+            TryGetReorderableList(property, out ReorderableList list);
             return list;
         }
 
-        public static bool TryGetList(SerializedProperty property, out ReorderableList list)
+        public static bool TryGetReorderableList(SerializedProperty property, out ReorderableList list)
         {
             if (property is null) throw new ArgumentNullException();
             
@@ -56,11 +52,12 @@ namespace Kokuu.Structures
             };
             buffers.AddFirst(buffer);
             
-            if (buffers.Count > MaxBufferSize) buffers.RemoveLast();
+            if (buffers.Count > MaxReorderableListBufferSize) buffers.RemoveLast();
             
             list = buffer.list;
             return false;
         }
+        
+        #endregion
     }
-#endif
 }
